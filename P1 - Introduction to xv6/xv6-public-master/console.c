@@ -191,6 +191,8 @@ struct {
   uint e;  // Edit index
 } input;
 
+char charsToBeMoved[INPUT_BUF];
+
 #define C(x)  ((x)-'@')  // Control-x
 #define S(x)  ((x)+' ')  // shift-x
 
@@ -290,11 +292,13 @@ move_to_end(){
   }
 }
 
+/*
 void 
 erase_last_word(){
   while(input.e!="")
 
 }
+*/
 
 void
 consputs(const char* s){
@@ -302,6 +306,37 @@ consputs(const char* s){
     input.buf[input.e++ % INPUT_BUF] = s[i];
     consputc(s[i]);
   }
+}
+
+void
+save_buffer() {
+  int shift_number=1;
+  int cursor_index=input.e;
+  while(input.buf[cursor_index % INPUT_BUF] !='\0'){
+    shift_number+=1;
+    cursor_index+=1;
+  }
+
+  // for ( int j =0; j < shift_number; j++){
+  //   consputc('f');
+  // }
+  memset(charsToBeMoved, 0, INPUT_BUF);
+  memcpy(charsToBeMoved, input.buf + input.e - 1, shift_number);
+  // charsToBeMoved[INPUT_BUF - 1] = '\0';
+  //uint n = input.rightmost - input.e;
+  // int i;
+  // for (i = 0; i < shift_number; i++) {
+
+  //   char c = charsToBeMoved[i];
+  //   input.buf[(input.e + i) % INPUT_BUF] = c;
+  //   consputc(c);
+  // }
+  // reset charsToBeMoved for future use
+  // memset(charsToBeMoved, '\0', INPUT_BUF);
+  // return the caret to its correct position
+  //for (i = 0; i < shift_number; i++) {
+  //  consputc("A");
+  //}
 }
 
 void
@@ -341,10 +376,19 @@ consoleintr(int (*getc)(void))
       }
       break;
     default:
+
       if(c != 0 && input.e-input.r < INPUT_BUF){
         c = (c == '\r') ? '\n' : c;
+
+        if (input.e != input.w && input.buf[input.e% INPUT_BUF] !='\0'){
+          save_buffer();
+        }
+        //memcpy()
         input.buf[input.e++ % INPUT_BUF] = c;
+
         consputc(c);
+        consputs(charsToBeMoved);
+
         if(c == '\n' || c == C('D') || input.e == input.r+INPUT_BUF){
           input.w = input.e;
           wakeup(&input.r);
