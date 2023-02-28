@@ -20,7 +20,10 @@ main(void)
   dup(0);  // stderr
 
   for(;;){
+    
+
     printf(1, "init: starting sh\n");
+    printf(1,"Group Members: \n Ouldouz Neysari \n Ali Padyav \n Kasra Haji Heidari \n");
     pid = fork();
     if(pid < 0){
       printf(1, "init: fork failed\n");
@@ -33,5 +36,14 @@ main(void)
     }
     while((wpid=wait()) >= 0 && wpid != pid)
       printf(1, "zombie!\n");
+
+
+
   }
+
+  //printing names of group members 
+
+
+//  printf("Ali padyav");
+//  printf("Kasra Haji Heidari");
 }

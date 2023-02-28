@@ -15,6 +15,8 @@
 #include "proc.h"
 #include "x86.h"
 
+#define CRTPORT 0x3d4
+
 static void consputc(int);
 
 static int panicked = 0;
@@ -23,6 +25,9 @@ static struct {
   struct spinlock lock;
   int locking;
 } cons;
+
+
+
 
 static void
 printint(int xx, int base, int sign)
@@ -187,6 +192,117 @@ struct {
 } input;
 
 #define C(x)  ((x)-'@')  // Control-x
+#define S(x)  ((x)+' ')  // shift-x
+
+void 
+move_backward_cursor(){
+
+  int pos;
+  
+  // get cursor position
+  outb(CRTPORT, 14);                  
+  pos = inb(CRTPORT+1) << 8;
+  outb(CRTPORT, 15);
+  pos |= inb(CRTPORT+1);    
+
+  // move back
+  pos--;
+
+  // reset cursor
+  
+  outb(CRTPORT, 15);
+  outb(CRTPORT+1, (unsigned char)(pos&0xFF));
+  outb(CRTPORT, 14);
+  outb(CRTPORT+1, (unsigned char )((pos>>8)&0xFF));
+  
+  //crt[pos] = ' ' | 0x0700;
+
+}
+
+
+void 
+move_forward_cursor(){
+
+  int pos;
+  
+  // get cursor position
+  outb(CRTPORT, 14);                  
+  pos = inb(CRTPORT+1) << 8;
+  outb(CRTPORT, 15);
+  pos |= inb(CRTPORT+1);    
+
+  // move forward
+  pos++;
+
+  // reset cursor
+  
+  outb(CRTPORT, 15);
+  outb(CRTPORT+1, (unsigned char)(pos&0xFF));
+  outb(CRTPORT, 14);
+  outb(CRTPORT+1, (unsigned char )((pos>>8)&0xFF));
+  
+  //crt[pos] = ' ' | 0x0700;
+
+}
+
+
+
+/*
+void
+consclear(){
+  while(input.e != input.w &&
+        input.buf[(input.e-1) % INPUT_BUF] != '\n'){
+    input.e--;
+  move_backward_cursor();
+    //consputc(BACKSPACE);
+  }
+}
+*/
+
+
+void
+move_to_start(){
+
+  while(input.e != input.w &&
+        input.buf[(input.e-1) % INPUT_BUF] != '\n'){
+     input.e--;
+  move_backward_cursor();
+  
+  }
+
+}
+
+void
+move_to_end(){
+  if (input.e == input.w &&
+      input.buf[input.e % INPUT_BUF] != '\0') {
+    input.e++;
+    move_forward_cursor();
+  }
+  int temp = input.buf[(input.e-1) % INPUT_BUF] != '\0';
+  while(input.buf[(input.e-1) % INPUT_BUF] != '\0'){
+    input.e++;
+    move_forward_cursor();
+  }
+  if (temp) {
+      input.e--;
+      move_backward_cursor();
+  }
+}
+
+void 
+erase_last_word(){
+  while(input.e!="")
+
+}
+
+void
+consputs(const char* s){
+  for(int i = 0; i < INPUT_BUF && (s[i]); ++i){
+    input.buf[input.e++ % INPUT_BUF] = s[i];
+    consputc(s[i]);
+  }
+}
 
 void
 consoleintr(int (*getc)(void))
@@ -196,6 +312,17 @@ consoleintr(int (*getc)(void))
   acquire(&cons.lock);
   while((c = getc()) >= 0){
     switch(c){
+
+    case S('['):
+      move_to_start();
+      break;
+    case S(']'):
+
+      // cprintf("alumpish");
+      // consputc('A');
+      move_to_end();
+      break;
+
     case C('P'):  // Process listing.
       // procdump() locks cons.lock indirectly; invoke later
       doprocdump = 1;
@@ -297,3 +424,21 @@ consoleinit(void)
   ioapicenable(IRQ_KBD, 0);
 }
 
+
+/*
+void 
+consoleintr()
+{
+  int c;
+  char buffer[MAX_COMMAND_LENGTH];
+  int x;
+
+  acquire(&input.lock);
+  while((c = getc()) >= 0){
+    switch(c){
+
+
+
+
+}
+*/
