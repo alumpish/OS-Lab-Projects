@@ -15,7 +15,8 @@
 #include "proc.h"
 #include "x86.h"
 
-#define CRTPORT 0x3d4
+#define LEFT_ARROW      0xE4
+#define RIGHT_ARROW     0xE5
 
 static void consputc(int);
 
@@ -25,9 +26,6 @@ static struct {
   struct spinlock lock;
   int locking;
 } cons;
-
-
-
 
 static void
 printint(int xx, int base, int sign)
@@ -191,14 +189,8 @@ struct {
   uint e;  // Edit index
 } input;
 
-char charsToBeMoved[INPUT_BUF];
-
-#define C(x)  ((x)-'@')  // Control-x
-#define S(x)  ((x)+' ')  // shift-x
-
 void 
 move_backward_cursor(){
-
   int pos;
   
   // get cursor position
@@ -211,20 +203,16 @@ move_backward_cursor(){
   pos--;
 
   // reset cursor
-  
   outb(CRTPORT, 15);
   outb(CRTPORT+1, (unsigned char)(pos&0xFF));
   outb(CRTPORT, 14);
   outb(CRTPORT+1, (unsigned char )((pos>>8)&0xFF));
   
   //crt[pos] = ' ' | 0x0700;
-
 }
-
 
 void 
 move_forward_cursor(){
-
   int pos;
   
   // get cursor position
@@ -237,107 +225,16 @@ move_forward_cursor(){
   pos++;
 
   // reset cursor
-  
   outb(CRTPORT, 15);
   outb(CRTPORT+1, (unsigned char)(pos&0xFF));
   outb(CRTPORT, 14);
   outb(CRTPORT+1, (unsigned char )((pos>>8)&0xFF));
   
   //crt[pos] = ' ' | 0x0700;
-
 }
 
-
-
-/*
-void
-consclear(){
-  while(input.e != input.w &&
-        input.buf[(input.e-1) % INPUT_BUF] != '\n'){
-    input.e--;
-  move_backward_cursor();
-    //consputc(BACKSPACE);
-  }
-}
-*/
-
-
-void
-move_to_start(){
-
-  while(input.e != input.w &&
-        input.buf[(input.e-1) % INPUT_BUF] != '\n'){
-     input.e--;
-  move_backward_cursor();
-  
-  }
-
-}
-
-void
-move_to_end(){
-  if (input.e == input.w &&
-      input.buf[input.e % INPUT_BUF] != '\0') {
-    input.e++;
-    move_forward_cursor();
-  }
-  int temp = input.buf[(input.e-1) % INPUT_BUF] != '\0';
-  while(input.buf[(input.e-1) % INPUT_BUF] != '\0'){
-    input.e++;
-    move_forward_cursor();
-  }
-  if (temp) {
-      input.e--;
-      move_backward_cursor();
-  }
-}
-
-/*
-void 
-erase_last_word(){
-  while(input.e!="")
-
-}
-*/
-
-void
-consputs(const char* s){
-  for(int i = 0; i < INPUT_BUF && (s[i]); ++i){
-    input.buf[input.e++ % INPUT_BUF] = s[i];
-    consputc(s[i]);
-  }
-}
-
-void
-save_buffer() {
-  int shift_number=1;
-  int cursor_index=input.e;
-  while(input.buf[cursor_index % INPUT_BUF] !='\0'){
-    shift_number+=1;
-    cursor_index+=1;
-  }
-
-  // for ( int j =0; j < shift_number; j++){
-  //   consputc('f');
-  // }
-  memset(charsToBeMoved, 0, INPUT_BUF);
-  memcpy(charsToBeMoved, input.buf + input.e - 1, shift_number);
-  // charsToBeMoved[INPUT_BUF - 1] = '\0';
-  //uint n = input.rightmost - input.e;
-  // int i;
-  // for (i = 0; i < shift_number; i++) {
-
-  //   char c = charsToBeMoved[i];
-  //   input.buf[(input.e + i) % INPUT_BUF] = c;
-  //   consputc(c);
-  // }
-  // reset charsToBeMoved for future use
-  // memset(charsToBeMoved, '\0', INPUT_BUF);
-  // return the caret to its correct position
-  //for (i = 0; i < shift_number; i++) {
-  //  consputc("A");
-  //}
-}
+#define C(x)  ((x)-'@')  // Control-x
+#define S(x)  ((x)+' ')  // shift-x
 
 void
 consoleintr(int (*getc)(void))
@@ -347,17 +244,16 @@ consoleintr(int (*getc)(void))
   acquire(&cons.lock);
   while((c = getc()) >= 0){
     switch(c){
-
-    case S('['):
-      move_to_start();
+      case LEFT_ARROW:
+      if(input.e != 0){
+      move_backward_cursor();
+      input.e--;
+      }
       break;
-    case S(']'):
-
-      // cprintf("alumpish");
-      // consputc('A');
-      move_to_end();
+      case RIGHT_ARROW:
+      move_forward_cursor();
+      input.e++;
       break;
-
     case C('P'):  // Process listing.
       // procdump() locks cons.lock indirectly; invoke later
       doprocdump = 1;
@@ -376,19 +272,10 @@ consoleintr(int (*getc)(void))
       }
       break;
     default:
-
       if(c != 0 && input.e-input.r < INPUT_BUF){
         c = (c == '\r') ? '\n' : c;
-
-        if (input.e != input.w && input.buf[input.e% INPUT_BUF] !='\0'){
-          save_buffer();
-        }
-        //memcpy()
         input.buf[input.e++ % INPUT_BUF] = c;
-
         consputc(c);
-        consputs(charsToBeMoved);
-
         if(c == '\n' || c == C('D') || input.e == input.r+INPUT_BUF){
           input.w = input.e;
           wakeup(&input.r);
@@ -468,21 +355,3 @@ consoleinit(void)
   ioapicenable(IRQ_KBD, 0);
 }
 
-
-/*
-void 
-consoleintr()
-{
-  int c;
-  char buffer[MAX_COMMAND_LENGTH];
-  int x;
-
-  acquire(&input.lock);
-  while((c = getc()) >= 0){
-    switch(c){
-
-
-
-
-}
-*/
