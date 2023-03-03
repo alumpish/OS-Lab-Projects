@@ -233,6 +233,33 @@ move_forward_cursor(){
   //crt[pos] = ' ' | 0x0700;
 }
 
+void
+move_to_start(){
+  while(input.e != input.w &&
+        input.buf[(input.e-1) % INPUT_BUF] != '\n'){
+     input.e--;
+  move_backward_cursor();
+  }
+}
+
+void
+move_to_end(){
+  if (input.e == input.w &&
+      input.buf[input.e % INPUT_BUF] != '\0') {
+    input.e++;
+    move_forward_cursor();
+  }
+  int temp = input.buf[(input.e-1) % INPUT_BUF] != '\0';
+  while(input.buf[(input.e-1) % INPUT_BUF] != '\0'){
+    input.e++;
+    move_forward_cursor();
+  }
+  if (temp) {
+      input.e--;
+      move_backward_cursor();
+  }
+}
+
 #define C(x)  ((x)-'@')  // Control-x
 #define S(x)  ((x)+' ')  // shift-x
 
@@ -244,20 +271,31 @@ consoleintr(int (*getc)(void))
   acquire(&cons.lock);
   while((c = getc()) >= 0){
     switch(c){
-      case LEFT_ARROW:
+    case LEFT_ARROW:
       if(input.e != 0){
       move_backward_cursor();
       input.e--;
       }
       break;
-      case RIGHT_ARROW:
+
+    case RIGHT_ARROW:
       move_forward_cursor();
       input.e++;
       break;
+
+    case S('['):
+      move_to_start();
+      break;
+
+    case S(']'):
+      move_to_end();
+      break;
+
     case C('P'):  // Process listing.
       // procdump() locks cons.lock indirectly; invoke later
       doprocdump = 1;
       break;
+
     case C('U'):  // Kill line.
       while(input.e != input.w &&
             input.buf[(input.e-1) % INPUT_BUF] != '\n'){
@@ -265,12 +303,14 @@ consoleintr(int (*getc)(void))
         consputc(BACKSPACE);
       }
       break;
+
     case C('H'): case '\x7f':  // Backspace
       if(input.e != input.w){
         input.e--;
         consputc(BACKSPACE);
       }
       break;
+
     default:
       if(c != 0 && input.e-input.r < INPUT_BUF){
         c = (c == '\r') ? '\n' : c;
@@ -354,4 +394,3 @@ consoleinit(void)
 
   ioapicenable(IRQ_KBD, 0);
 }
-
