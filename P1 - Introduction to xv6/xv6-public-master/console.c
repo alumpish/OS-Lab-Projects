@@ -219,9 +219,7 @@ move_backward_cursor(){
   outb(CRTPORT+1, (unsigned char)(pos&0xFF));
   outb(CRTPORT, 14);
   outb(CRTPORT+1, (unsigned char )((pos>>8)&0xFF));
-  
-  //crt[pos] = ' ' | 0x0700;
-}
+  }
 
 void 
 move_forward_cursor(){
@@ -241,18 +239,16 @@ move_forward_cursor(){
   outb(CRTPORT+1, (unsigned char)(pos&0xFF));
   outb(CRTPORT, 14);
   outb(CRTPORT+1, (unsigned char )((pos>>8)&0xFF));
-  
-  //crt[pos] = ' ' | 0x0700;
-}
+  }
 
-// void
-// move_to_start(){
-//   while(input.e != input.w &&
-//         input.buf[(input.e-1) % INPUT_BUF] != '\n'){
-//      input.e--;
-//   move_backward_cursor();
-//   }
-// }
+void
+move_to_start(){
+  while(input.e != input.w &&
+        input.buf[(input.e-1) % INPUT_BUF] != '\n'){
+     input.e--;
+  move_backward_cursor();
+  }
+}
 
 void
 move_to_end(){
@@ -267,8 +263,8 @@ move_to_end(){
     move_forward_cursor();
   }
   if (temp) {
-      input.e--;
-      move_backward_cursor();
+    input.e--;
+    move_backward_cursor();
   }
 }
 
@@ -280,37 +276,19 @@ int isDelimeter(char c)
   return 0;
 }
 
-
-void move_to_start()
+void jump_left_cursor()
 {
+  int count = input.e;
 
-    int pos;
-
-  // get cursor position
-  outb(CRTPORT, 14);
-  pos = inb(CRTPORT+1) << 8;
-  outb(CRTPORT, 15);
-  pos |= inb(CRTPORT+1);
-
-  if(crt[pos - 2] == ('$' | 0x0700))
-    return;
-
-  int npos = pos;
-  for (int i = pos - 2 ; i >= 0 ; i--)
-    if (isDelimeter(crt[i]))
-    {
-      npos = i;
-      break;
-    }
-  input.e -= (pos - npos - 1);
-  pos = npos + 1;
-
-  // reset cursor
-  outb(CRTPORT, 14);
-  outb(CRTPORT+1, pos>>8);
-  outb(CRTPORT, 15);
-  outb(CRTPORT+1, pos);
+  for (int i = 0; i < count; i++){
+    if (isDelimeter(input.buf[input.e]))
+      return;
+    input.l--;
+    input.e--;
+    consputc(BACKSPACE);
+  }
 }
+
 
 #define C(x)  ((x)-'@')  // Control-x
 #define S(x)  ((x)+' ')  // shift-x
@@ -343,6 +321,10 @@ consoleintr(int (*getc)(void))
       move_to_end();
       break;
 
+    case C('W'):
+      jump_left_cursor();
+      break;
+
     case C('P'):  // Process listing.
       // procdump() locks cons.lock indirectly; invoke later
       doprocdump = 1;
@@ -368,14 +350,12 @@ consoleintr(int (*getc)(void))
       if(c != 0 && input.e-input.r < INPUT_BUF){
         c = (c == '\r') ? '\n' : c;
 
-        // cprintf("%d %d", input.e, input.l);
-
-
-
         for (int i = input.l+1; i > input.e; i--){
           input.buf[(i) % INPUT_BUF] = input.buf[(i-1) % INPUT_BUF];
         }
+
         input.buf[input.e % INPUT_BUF] = c;
+
         
         if (input.e != input.l){
           for (int i = input.e; i <= input.l+1; i++){
@@ -391,18 +371,20 @@ consoleintr(int (*getc)(void))
           consputc(c);
         }
         
-
-        int rem_char_count = input.l - input.e + 1;
         input.l += 1;
         input.e += 1;
+        // input.w += 1;
 
         if(c == '\n' || c == C('D') || input.e == input.r+INPUT_BUF){
-          for (int i = 0; i < input.l; i++){
-              consputc(input.buf[i % INPUT_BUF]);
+          // for (int i = 0; i < input.l; i++){
+          //     consputc(input.buf[i % INPUT_BUF]);
+          // }
+
+          for (int i = input.e; i <= input.l; i++){
+            move_forward_cursor();
           }
-          // move_to_end();
+          
           input.w = input.e;
-          // input.l = 0;
           wakeup(&input.r);
         }
 
