@@ -131,6 +131,8 @@ panic(char *s)
 #define CRTPORT 0x3d4
 static ushort *crt = (ushort*)P2V(0xb8000);  // CGA memory
 
+int back_counter = 0;
+
 static void
 cgaputc(int c)
 {
@@ -181,13 +183,23 @@ consputc(int c)
   cgaputc(c);
 }
 
+
 #define INPUT_BUF 128
 struct {
   char buf[INPUT_BUF];
   uint r;  // Read index
   uint w;  // Write index
   uint e;  // Edit index
+  uint l;  // Last index
 } input;
+
+void
+consputs(const char* s){
+  for(int i = 0; i < INPUT_BUF && (s[i]); ++i){
+    input.buf[input.e++ % INPUT_BUF] = s[i];
+    consputc(s[i]);
+  }
+}
 
 void 
 move_backward_cursor(){
@@ -233,14 +245,14 @@ move_forward_cursor(){
   //crt[pos] = ' ' | 0x0700;
 }
 
-void
-move_to_start(){
-  while(input.e != input.w &&
-        input.buf[(input.e-1) % INPUT_BUF] != '\n'){
-     input.e--;
-  move_backward_cursor();
-  }
-}
+// void
+// move_to_start(){
+//   while(input.e != input.w &&
+//         input.buf[(input.e-1) % INPUT_BUF] != '\n'){
+//      input.e--;
+//   move_backward_cursor();
+//   }
+// }
 
 void
 move_to_end(){
@@ -258,6 +270,46 @@ move_to_end(){
       input.e--;
       move_backward_cursor();
   }
+}
+
+
+int isDelimeter(char c)
+{
+  if (c == ' ' || c == '.' || c == ',' || c == ':' || c == ';')
+    return 1;
+  return 0;
+}
+
+
+void move_to_start()
+{
+
+    int pos;
+
+  // get cursor position
+  outb(CRTPORT, 14);
+  pos = inb(CRTPORT+1) << 8;
+  outb(CRTPORT, 15);
+  pos |= inb(CRTPORT+1);
+
+  if(crt[pos - 2] == ('$' | 0x0700))
+    return;
+
+  int npos = pos;
+  for (int i = pos - 2 ; i >= 0 ; i--)
+    if (isDelimeter(crt[i]))
+    {
+      npos = i;
+      break;
+    }
+  input.e -= (pos - npos - 1);
+  pos = npos + 1;
+
+  // reset cursor
+  outb(CRTPORT, 14);
+  outb(CRTPORT+1, pos>>8);
+  outb(CRTPORT, 15);
+  outb(CRTPORT+1, pos);
 }
 
 #define C(x)  ((x)-'@')  // Control-x
@@ -307,6 +359,7 @@ consoleintr(int (*getc)(void))
     case C('H'): case '\x7f':  // Backspace
       if(input.e != input.w){
         input.e--;
+        input.l--;
         consputc(BACKSPACE);
       }
       break;
@@ -314,12 +367,45 @@ consoleintr(int (*getc)(void))
     default:
       if(c != 0 && input.e-input.r < INPUT_BUF){
         c = (c == '\r') ? '\n' : c;
-        input.buf[input.e++ % INPUT_BUF] = c;
-        consputc(c);
+
+        // cprintf("%d %d", input.e, input.l);
+
+
+
+        for (int i = input.l+1; i > input.e; i--){
+          input.buf[(i) % INPUT_BUF] = input.buf[(i-1) % INPUT_BUF];
+        }
+        input.buf[input.e % INPUT_BUF] = c;
+        
+        if (input.e != input.l){
+          for (int i = input.e; i <= input.l+1; i++){
+            consputc(input.buf[i % INPUT_BUF]);
+            
+          }
+          for (int i = input.e; i <= input.l; i++){
+            move_backward_cursor();
+          }
+
+        }
+        else{
+          consputc(c);
+        }
+        
+
+        int rem_char_count = input.l - input.e + 1;
+        input.l += 1;
+        input.e += 1;
+
         if(c == '\n' || c == C('D') || input.e == input.r+INPUT_BUF){
+          for (int i = 0; i < input.l; i++){
+              consputc(input.buf[i % INPUT_BUF]);
+          }
+          // move_to_end();
           input.w = input.e;
+          // input.l = 0;
           wakeup(&input.r);
         }
+
       }
       break;
     }
