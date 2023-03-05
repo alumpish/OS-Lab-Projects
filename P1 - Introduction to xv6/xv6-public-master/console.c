@@ -280,8 +280,20 @@ void jump_left_cursor()
 {
   int count = input.e;
 
+  if (isDelimeter(input.buf[input.e-1])){
+    for (int i = 0; i < count; i++){
+      if (!isDelimeter(input.buf[input.e-1]))
+        break;
+      input.l--;
+      input.e--;
+      consputc(BACKSPACE);
+    }
+  }
+
+  count = input.e;
+
   for (int i = 0; i < count; i++){
-    if (isDelimeter(input.buf[input.e]))
+    if (isDelimeter(input.buf[input.e-1]))
       return;
     input.l--;
     input.e--;
