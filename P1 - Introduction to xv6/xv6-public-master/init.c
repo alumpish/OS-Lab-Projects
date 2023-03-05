@@ -23,7 +23,7 @@ main(void)
     
 
     printf(1, "init: starting sh\n");
-    printf(1,"Group Members: \n Ouldouz Neysari \n Ali Padyav \n Kasra Haji Heidari \n");
+    printf(1,"Group Members:\n1- Ouldouz Neysari\n2- Ali Padyav\n3- Kasra Haji Heydari\n");
     pid = fork();
     if(pid < 0){
       printf(1, "init: fork failed\n");

@@ -373,17 +373,17 @@ consoleintr(int (*getc)(void))
         
         input.l += 1;
         input.e += 1;
-        // input.w += 1;
 
         if(c == '\n' || c == C('D') || input.e == input.r+INPUT_BUF){
           // for (int i = 0; i < input.l; i++){
           //     consputc(input.buf[i % INPUT_BUF]);
           // }
 
-          for (int i = input.e; i <= input.l; i++){
-            move_forward_cursor();
-          }
-          
+          // for (int i = input.e; i <= input.l; i++){
+          //   move_forward_cursor();
+          // }
+          move_to_end();
+
           input.w = input.e;
           wakeup(&input.r);
         }
