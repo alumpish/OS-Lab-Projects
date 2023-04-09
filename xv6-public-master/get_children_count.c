@@ -12,7 +12,7 @@ int main(void)
         if (pid == 0)
         {
             // child process
-            sleep(500);
+            sleep(50);
             exit();
         }
     }

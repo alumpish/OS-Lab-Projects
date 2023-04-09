@@ -94,7 +94,7 @@ sys_uptime(void)
 extern int syscalls_count[25]; // assuming there are 25 system calls in xv6
 
 int
-sys_mostcalled(void)
+sys_find_most_callee(void)
 {
   int i, max_calls = 0, most_called_syscall = 0;
   for (i = 0; i < 25; i++) {

@@ -2,14 +2,13 @@
 #include "user.h"
 
 int main(int argc , char* argv[]){
-    /*if(argc !=1){
+    if(argc !=1){
        printf(1,"wrong format");
        exit(); 
-    }*/
-    int pid = getpid();
+    }
 
-    printf(1, "PID : %d",pid);
+    int pid = getpid();
+    printf(1, "PID : %d\n",pid);
 
     exit();
-
 }
