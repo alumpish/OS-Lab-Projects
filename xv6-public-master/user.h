@@ -23,6 +23,10 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+int mostcalled(void);
+int get_children_count(void);
+int kill_first_child(void);
+
 
 // ulib.c
 int stat(const char*, struct stat*);

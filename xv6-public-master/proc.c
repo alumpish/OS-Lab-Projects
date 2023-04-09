@@ -112,6 +112,8 @@ found:
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
 
+  p->children_count = 0;
+
   return p;
 }
 
@@ -218,6 +220,9 @@ fork(void)
 
   release(&ptable.lock);
 
+  curproc->children[curproc->children_count] = np;
+  curproc->children_count++;
+
   return pid;
 }
 
@@ -258,6 +263,16 @@ exit(void)
       p->parent = initproc;
       if(p->state == ZOMBIE)
         wakeup1(initproc);
+    }
+  }
+
+  // update parent's children array
+  for(int i = 0; i < curproc->parent->children_count; i++){
+    if(curproc->parent->children[i] == curproc){
+      curproc->parent->children[i] = curproc->parent->children[curproc->parent->children_count - 1];
+      curproc->parent->children[curproc->parent->children_count - 1] = 0;
+      curproc->parent->children_count--;
+      break;
     }
   }
 
@@ -493,6 +508,28 @@ kill(int pid)
     }
   }
   release(&ptable.lock);
+  return -1;
+}
+
+int
+kfc()
+{
+  struct proc *p  = myproc();
+  acquire(&ptable.lock);
+  int lowest_pid = INT_MAX;
+  int found = 0;
+  for(int i = 0; i < p->children_count; i++){
+    if (p->children[i]->pid < lowest_pid){
+      lowest_pid = p->children[i]->pid;
+      found = 1;
+    }
+  }
+
+  release(&ptable.lock);
+
+  if (found)
+    return kill(lowest_pid);
+
   return -1;
 }
 

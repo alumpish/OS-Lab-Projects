@@ -182,6 +182,10 @@ UPROGS=\
 	_wc\
 	_zombie\
 	_mmm\
+	_get_pid\
+	_find_most_calle\
+	_get_children_count\
+	_kill_first_child\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)

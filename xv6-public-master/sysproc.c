@@ -89,3 +89,31 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+
+extern int syscalls_count[25]; // assuming there are 25 system calls in xv6
+
+int
+sys_mostcalled(void)
+{
+  int i, max_calls = 0, most_called_syscall = 0;
+  for (i = 0; i < 25; i++) {
+    if (syscalls_count[i] > max_calls) {
+      max_calls = syscalls_count[i];
+      most_called_syscall = i;
+    }
+  }
+  return most_called_syscall;
+}
+
+int
+sys_get_children_count(void)
+{
+  return myproc()->children_count;
+}
+
+int
+sys_kill_first_child(void)
+{
+  return kfc();
+}
