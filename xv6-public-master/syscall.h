@@ -23,3 +23,4 @@
 #define SYS_mostcalled  23
 #define SYS_get_children_count 24
 #define SYS_kill_first_child 25
+#define SYS_find_fibonacci_number 26

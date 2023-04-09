@@ -106,6 +106,7 @@ extern int sys_uptime(void);
 extern int sys_mostcalled(void);
 extern int sys_get_children_count(void);
 extern int sys_kill_first_child(void);
+extern int sys_find_fibonacci_number(void);
 
 
 
@@ -132,8 +133,9 @@ static int (*syscalls[])(void) = {
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
 [SYS_mostcalled] sys_mostcalled,
-[SYS_get_children_count]   sys_get_children_count,
-[SYS_kill_first_child]     sys_kill_first_child,
+[SYS_get_children_count]    sys_get_children_count,
+[SYS_kill_first_child]      sys_kill_first_child,
+[SYS_find_fibonacci_number] sys_find_fibonacci_number,
 };
 
 int syscalls_count[25];

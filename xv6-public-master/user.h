@@ -26,6 +26,7 @@ int uptime(void);
 int mostcalled(void);
 int get_children_count(void);
 int kill_first_child(void);
+int find_fibonacci_number(void);
 
 
 // ulib.c

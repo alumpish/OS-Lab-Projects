@@ -27,6 +27,7 @@ OBJS = \
 	uart.o\
 	vectors.o\
 	vm.o\
+	sysutils.o\
 
 # Cross-compiling (e.g., on Mac OS X)
 # TOOLPREFIX = i386-jos-elf
@@ -186,6 +187,7 @@ UPROGS=\
 	_find_most_calle\
 	_get_children_count\
 	_kill_first_child\
+	_find_fibonacci_number\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
