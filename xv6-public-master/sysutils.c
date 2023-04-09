@@ -18,8 +18,6 @@ static int find_fibonacci_number(int n) {
     return find_fibonacci_number(n - 1) + find_fibonacci_number(n - 2);
 }
 
-
-
 int
 sys_find_fibonacci_number(void) {
     return find_fibonacci_number(myproc()->tf->ebx);

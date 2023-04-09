@@ -524,9 +524,8 @@ kfc()
       found = 1;
     }
   }
-
   release(&ptable.lock);
-
+  
   if (found)
     return kill(lowest_pid);
 
