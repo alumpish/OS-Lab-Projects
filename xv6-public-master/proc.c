@@ -117,8 +117,8 @@ found:
 
   p->children_count = 0;
 
-  memset(&p->sched_info, 0, sizeof(p->sched_info));
-  p->sched_info.queue = UNSET;
+  memset(&p->sched, 0, sizeof(p->sched));
+  p->sched.queue = UNSET;
 
   return p;
 }
@@ -228,8 +228,8 @@ int fork(void)
   np->state = RUNNABLE;
 
   acquire(&tickslock);
-  np->sched_info.last_run = ticks;
-  np->sched_info.arrival_time = ticks;
+  np->sched.last_run = ticks;
+  np->sched.arrival_time = ticks;
   release(&tickslock);
 
   release(&ptable.lock);
@@ -349,7 +349,7 @@ int wait(void)
   }
 }
 
-void ageprocs(int osTicks)
+void ageprocs(int ticks)
 {
   struct proc *p;
 
@@ -357,11 +357,15 @@ void ageprocs(int osTicks)
 
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
   {
-    if (p->state == RUNNABLE && p->sched_info.queue != ROUND_ROBIN)
+    if (p->state == RUNNABLE && p->sched.queue != ROUND_ROBIN)
     {
-      if (osTicks - p->sched_info.last_run > AGING_THRESHOLD)
+      if (p->sched.queue == FCFS)
+        cprintf("%d = %d\n", p->pid, ticks - p->sched.last_run);
+      if (ticks - p->sched.last_run > AGING_THRESHOLD)
       {
         release(&ptable.lock);
+        // cprintf("aging process %d\n", p->pid);
+
         change_queue(p->pid, ROUND_ROBIN);
         acquire(&ptable.lock);
       }
@@ -378,12 +382,16 @@ roundrobin(struct proc *lastScheduled)
   for (;;)
   {
     p++;
+
+    // Reached the end of the process table, wrap around to the beginning
     if (p >= &ptable.proc[NPROC])
       p = ptable.proc;
 
-    if (p->state == RUNNABLE && p->sched_info.queue == ROUND_ROBIN)
+    // Check if the process is runnable and belongs to the round robin scheduling queue
+    if (p->state == RUNNABLE && p->sched.queue == ROUND_ROBIN)
       return p;
 
+    // If we've looped around to the process we started with, it means we've checked all processes and didn't find any eligible ones
     if (p == lastScheduled)
       return 0;
   }
@@ -394,34 +402,37 @@ lottery()
 {
   struct proc *result = 0;
 
-  uint tickets_sum = 0;
+  uint total_tickets = 0;
   for (int i = 0; i < NPROC; ++i)
   {
-    if ((ptable.proc[i].state == RUNNABLE) && (ptable.proc[i].sched_info.queue == LOTTERY))
+    if ((ptable.proc[i].state == RUNNABLE) && (ptable.proc[i].sched.queue == LOTTERY))
     {
-      tickets_sum += ptable.proc[i].sched_info.tickets_count;
+      total_tickets += ptable.proc[i].sched.tickets_count;
     }
   }
-  if (tickets_sum == 0)
+  if (total_tickets == 0)
+  {
     return result;
+  }
 
-  uint ticket = rand() % tickets_sum;
+  // Choose a random ticket between 0 and the total number of tickets
+  uint winning_ticket = rand() % total_tickets;
 
-  uint prev_interval_begin = 0;
+  // Iterate through all runnable processes and check which one holds the winning ticket
+  uint prev_tickets_sum = 0;
   for (int i = 0; i < NPROC; ++i)
   {
     if (ptable.proc[i].state != RUNNABLE)
       continue;
-    if (ptable.proc[i].sched_info.queue != LOTTERY)
+    if (ptable.proc[i].sched.queue != LOTTERY)
       continue;
-    if (
-        (ticket >= prev_interval_begin) &&
-        (ticket <= prev_interval_begin + ptable.proc[i].sched_info.tickets_count))
+    if ((winning_ticket >= prev_tickets_sum) && (winning_ticket <= prev_tickets_sum + ptable.proc[i].sched.tickets_count))
     {
+      // This process holds the winning ticket
       result = &ptable.proc[i];
       break;
     }
-    prev_interval_begin += ptable.proc[i].sched_info.tickets_count;
+    prev_tickets_sum += ptable.proc[i].sched.tickets_count;
   }
 
   return result;
@@ -431,17 +442,16 @@ struct proc *
 fcfs(void)
 {
   struct proc *result = 0;
-  float min_arrival = 0x7fffffff;
+  int min_arrival = INT_MAX;
 
-  struct proc *p;
-  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++)
   {
-    if (p->state != RUNNABLE || p->sched_info.queue != FCFS)
+    if (p->state != RUNNABLE || p->sched.queue != FCFS)
       continue;
-    if (result == 0 || p->sched_info.arrival_time < min_arrival)
+    if (result == 0 || p->sched.arrival_time < min_arrival)
     {
       result = p;
-      min_arrival = p->sched_info.arrival_time;
+      min_arrival = p->sched.arrival_time;
     }
   }
 
@@ -473,9 +483,8 @@ void scheduler(void)
     acquire(&ptable.lock);
     p = roundrobin(lastScheduledRR);
     if (p)
-    {
       lastScheduledRR = p;
-    }
+
     else
     {
       p = lottery();
@@ -497,7 +506,7 @@ void scheduler(void)
     switchuvm(p);
     p->state = RUNNING;
 
-    p->sched_info.last_run = ticks;
+    p->sched.last_run = ticks;
 
     swtch(&(c->scheduler), p->context);
     switchkvm();
@@ -707,12 +716,13 @@ void procdump(void)
   }
 }
 
-int
-change_queue(int pid, int new_queue) {
+int change_queue(int pid, int new_queue)
+{
   struct proc *p;
   int old_queue = -1;
 
-  if(new_queue == UNSET){
+  if (new_queue == UNSET)
+  {
     if (pid == 1)
       new_queue = ROUND_ROBIN;
     else if (pid > 1)
@@ -722,12 +732,15 @@ change_queue(int pid, int new_queue) {
   }
 
   acquire(&ptable.lock);
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p->pid == pid){
-      old_queue = p->sched_info.queue;
-      p->sched_info.queue = new_queue;
-      if (new_queue == LOTTERY && p->sched_info.tickets_count <= 0) {
-        p->sched_info.tickets_count = (rand() % MAX_RANDOM_TICKETS) + 1;
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if (p->pid == pid)
+    {
+      old_queue = p->sched.queue;
+      p->sched.queue = new_queue;
+      if (new_queue == LOTTERY && p->sched.tickets_count <= 0)
+      {
+        p->sched.tickets_count = (rand() % MAX_RANDOM_TICKETS) + 1;
       }
       break;
     }
@@ -736,14 +749,15 @@ change_queue(int pid, int new_queue) {
   return old_queue;
 }
 
-int
-set_lottery_ticket(int pid, int tickets)
+int set_lottery_ticket(int pid, int tickets)
 {
   acquire(&ptable.lock);
-  struct proc* p;
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p->pid == pid && p->sched_info.queue == LOTTERY){
-      p->sched_info.tickets_count = tickets;
+  struct proc *p;
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if (p->pid == pid && p->sched.queue == LOTTERY)
+    {
+      p->sched.tickets_count = tickets;
       release(&ptable.lock);
       return 0;
     }
@@ -752,29 +766,28 @@ set_lottery_ticket(int pid, int tickets)
   return -1;
 }
 
-void
-print_process_info()
+void print_process_info()
 {
- static char *states[] = {
-  [UNUSED]    "unused",
-  [EMBRYO]    "embryo",
-  [SLEEPING]  "sleeping",
-  [RUNNABLE]  "runnable",
-  [RUNNING]   "running",
-  [ZOMBIE]    "zombie"
-  };
+  static char *states[] = {
+      [UNUSED] "unused",
+      [EMBRYO] "embryo",
+      [SLEEPING] "sleeping",
+      [RUNNABLE] "runnable",
+      [RUNNING] "running",
+      [ZOMBIE] "zombie"};
 
   static int columns[] = {16, 8, 9, 8, 8, 8, 8, 9, 8, 8, 8, 8};
   cprintf("Process_Name    PID     State    Queue   Arrival Ticket\n"
-          "---------------------------------------------------------------------------------------\n");
+          "----------------------------------------------------------\n");
 
   struct proc *p;
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p->state == UNUSED)
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if (p->state == UNUSED)
       continue;
 
-    const char* state;
-    if(p->state >= 0 && p->state < NELEM(states) && states[p->state])
+    const char *state;
+    if (p->state >= 0 && p->state < NELEM(states) && states[p->state])
       state = states[p->state];
     else
       state = "???";
@@ -788,14 +801,14 @@ print_process_info()
     cprintf("%s", state);
     printspaces(columns[2] - strlen(state));
 
-    cprintf("%d", p->sched_info.queue);
-    printspaces(columns[3] - digitcount(p->sched_info.queue));
+    cprintf("%d", p->sched.queue);
+    printspaces(columns[3] - digitcount(p->sched.queue));
 
-    cprintf("%d", p->sched_info.arrival_time);
-    printspaces(columns[5] - digitcount(p->sched_info.arrival_time));
+    cprintf("%d", p->sched.arrival_time);
+    printspaces(columns[5] - digitcount(p->sched.arrival_time));
 
-    cprintf("%d", p->sched_info.tickets_count);
-    printspaces(columns[6] - digitcount(p->sched_info.tickets_count));
+    cprintf("%d", p->sched.tickets_count);
+    printspaces(columns[6] - digitcount(p->sched.tickets_count));
 
     cprintf("\n");
   }

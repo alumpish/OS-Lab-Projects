@@ -1,31 +1,34 @@
 #include "types.h"
 #include "user.h"
 
-#define PROCS_NUM 5
+#define FORK_COUNT 4
 
 int main()
 {
-    for (int i = 0; i < PROCS_NUM; ++i)
+    for (int i = 0; i < FORK_COUNT; ++i)
     {
         int pid = fork();
         if (pid > 0)
             continue;
         if (pid == 0)
         {
-            if (i == PROCS_NUM)
-                sleep(8000);
-            else
-                sleep(1000);
+            // printf(1, "Process %d started\n", getpid());
+            sleep(1000);
+
             for (int j = 0; j < 2 * i; ++j)
             {
                 int x = 1;
                 for (long k = 0; k < 1000000000; ++k)
-                    x++;
+                    x += 1;
             }
+
+            // printf(1, "Process %d finished\n", getpid());
             exit();
         }
     }
-    while (wait() != -1)
-        ;
+    
+    for (int i = 0; i < FORK_COUNT; ++i)
+        wait();
+
     exit();
 }

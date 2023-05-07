@@ -1,21 +1,21 @@
 #include "types.h"
 #include "user.h"
 
-void help()
+void display_help()
 {
-    printf(1, "usage: schedule command [arg...]\n");
+    printf(1, "usage: sched command [arg...]\n");
     printf(1, "Commands and Arguments:\n");
     printf(1, "  info\n");
     printf(1, "  set_queue <pid> <new_queue>\n");
     printf(1, "  set_tickets <pid> <tickets>\n");
 }
 
-void info()
+void display_process_info()
 {
     print_process_info();
 }
 
-void set_queue(int pid, int new_queue)
+void set_process_queue(int pid, int new_queue)
 {
     if (pid < 1)
     {
@@ -34,7 +34,7 @@ void set_queue(int pid, int new_queue)
         printf(1, "Queue changed successfully\n");
 }
 
-void set_tickets(int pid, int tickets)
+void set_process_tickets(int pid, int tickets)
 {
     if (pid < 1)
     {
@@ -57,30 +57,30 @@ int main(int argc, char *argv[])
 {
     if (argc < 2)
     {
-        help();
+        display_help();
         exit();
     }
     if (!strcmp(argv[1], "info"))
-        info();
+        display_process_info();
     else if (!strcmp(argv[1], "set_queue"))
     {
         if (argc < 4)
         {
-            help();
+            display_help();
             exit();
         }
-        set_queue(atoi(argv[2]), atoi(argv[3]));
+        set_process_queue(atoi(argv[2]), atoi(argv[3]));
     }
     else if (!strcmp(argv[1], "set_tickets"))
     {
         if (argc < 4)
         {
-            help();
+            display_help();
             exit();
         }
-        set_tickets(atoi(argv[2]), atoi(argv[3]));
+        set_process_tickets(atoi(argv[2]), atoi(argv[3]));
     }
     else
-        help();
+        display_help();
     exit();
 }

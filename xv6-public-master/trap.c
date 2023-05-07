@@ -44,7 +44,7 @@ void trap(struct trapframe *tf)
     return;
   }
 
-  int osTicks;
+  int savedTicks;
   switch (tf->trapno)
   {
   case T_IRQ0 + IRQ_TIMER:
@@ -52,10 +52,10 @@ void trap(struct trapframe *tf)
     {
       acquire(&tickslock);
       ticks++;
-      osTicks = ticks;
+      savedTicks = ticks;
       wakeup(&ticks);
       release(&tickslock);
-      ageprocs(osTicks);
+      ageprocs(savedTicks);
     }
     lapiceoi();
     break;

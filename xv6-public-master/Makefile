@@ -189,7 +189,7 @@ UPROGS=\
 	_get_children_count\
 	_kill_first_child\
 	_find_fibonacci_number\
-	_schedule\
+	_sched\
 	_foo\
 
 fs.img: mkfs README $(UPROGS)
