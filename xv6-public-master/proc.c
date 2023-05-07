@@ -360,11 +360,10 @@ void ageprocs(int ticks)
     if (p->state == RUNNABLE && p->sched.queue != ROUND_ROBIN)
     {
       if (p->sched.queue == FCFS)
-        cprintf("%d = %d\n", p->pid, ticks - p->sched.last_run);
+        // cprintf("%d = %d\n", p->pid, ticks - p->sched.last_run);
       if (ticks - p->sched.last_run > AGING_THRESHOLD)
       {
         release(&ptable.lock);
-        // cprintf("aging process %d\n", p->pid);
 
         change_queue(p->pid, ROUND_ROBIN);
         acquire(&ptable.lock);

@@ -2,6 +2,7 @@
 #include "user.h"
 
 #define FORK_COUNT 4
+#define LOOP_COUNT 1000000000
 
 int main()
 {
@@ -12,17 +13,15 @@ int main()
             continue;
         if (pid == 0)
         {
-            // printf(1, "Process %d started\n", getpid());
             sleep(1000);
 
             for (int j = 0; j < 2 * i; ++j)
             {
                 int x = 1;
-                for (long k = 0; k < 1000000000; ++k)
+                for (long k = 0; k < LOOP_COUNT; k++)
                     x += 1;
             }
 
-            // printf(1, "Process %d finished\n", getpid());
             exit();
         }
     }
