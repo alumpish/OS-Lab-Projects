@@ -47,7 +47,7 @@ enum procstate
 #define MAX_RANDOM_TICKETS 10
 #define AGING_THRESHOLD 8000
 
-enum schedqueue
+enum schedlevel
 {
   UNSET,
   ROUND_ROBIN,
@@ -56,7 +56,7 @@ enum schedqueue
 };
 struct schedinfo
 {
-  enum schedqueue queue; // Process queue
+  enum schedlevel queue; // Process queue
   int last_run;          // Last time process was run
   int arrival_time;      // Time process arrived in queue
   int tickets_count;     // Number of tickets for lottery scheduler

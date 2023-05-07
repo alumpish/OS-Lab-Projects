@@ -391,7 +391,7 @@ roundrobin(struct proc *lastScheduled)
     if (p->state == RUNNABLE && p->sched.queue == ROUND_ROBIN)
       return p;
 
-    // If we've looped around to the process we started with, it means we've checked all processes and didn't find any eligible ones
+    // It means we've checked all processes and didn't find any eligible ones
     if (p == lastScheduled)
       return 0;
   }
@@ -776,9 +776,9 @@ void print_process_info()
       [RUNNING] "running",
       [ZOMBIE] "zombie"};
 
-  static int columns[] = {16, 8, 9, 8, 8, 8, 8, 9, 8, 8, 8, 8};
-  cprintf("Process_Name    PID     State    Queue   Arrival Ticket\n"
-          "----------------------------------------------------------\n");
+  static int columns[] = {11, 7, 17, 8, 14, 6};
+  cprintf("name       pid     state          queue   arrive_time   ticket\n"
+          "..............................................................\n");
 
   struct proc *p;
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
@@ -805,10 +805,10 @@ void print_process_info()
     printspaces(columns[3] - digitcount(p->sched.queue));
 
     cprintf("%d", p->sched.arrival_time);
-    printspaces(columns[5] - digitcount(p->sched.arrival_time));
+    printspaces(columns[4] - digitcount(p->sched.arrival_time));
 
     cprintf("%d", p->sched.tickets_count);
-    printspaces(columns[6] - digitcount(p->sched.tickets_count));
+    printspaces(columns[5] - digitcount(p->sched.tickets_count));
 
     cprintf("\n");
   }
