@@ -112,6 +112,7 @@ struct cpu*     mycpu(void);
 struct proc*    myproc();
 void            pinit(void);
 void            procdump(void);
+void            ageprocs(int);
 void            scheduler(void) __attribute__((noreturn));
 void            sched(void);
 void            setproc(struct proc*);
@@ -121,6 +122,9 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 int             kfc(void);
+int             change_queue(int, int);
+int             set_lottery_ticket(int, int);
+void            print_process_info(void);
 
 // swtch.S
 void            swtch(struct context**, struct context*);
@@ -170,6 +174,12 @@ extern struct spinlock tickslock;
 void            uartinit(void);
 void            uartintr(void);
 void            uartputc(int);
+
+// utils.c
+void            srand(uint);
+uint            rand(void);
+int             digitcount(int);
+void            printspaces(int);
 
 // vm.c
 void            seginit(void);

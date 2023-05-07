@@ -107,6 +107,9 @@ extern int sys_find_most_callee(void);
 extern int sys_get_children_count(void);
 extern int sys_kill_first_child(void);
 extern int sys_find_fibonacci_number(void);
+extern int sys_change_scheduling_queue(void);
+extern int sys_set_lottery_ticket(void);
+extern int sys_print_process_info(void);
 
 
 
@@ -136,6 +139,9 @@ static int (*syscalls[])(void) = {
 [SYS_get_children_count]    sys_get_children_count,
 [SYS_kill_first_child]      sys_kill_first_child,
 [SYS_find_fibonacci_number] sys_find_fibonacci_number,
+[SYS_change_scheduling_queue]   sys_change_scheduling_queue,
+[SYS_set_lottery_ticket]        sys_set_lottery_ticket,
+[SYS_print_process_info]        sys_print_process_info,
 };
 
 int syscalls_count[25];

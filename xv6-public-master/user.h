@@ -27,6 +27,9 @@ int find_most_callee(void);
 int get_children_count(void);
 int kill_first_child(void);
 int find_fibonacci_number(void);
+int change_scheduling_queue(int, int);
+int set_lottery_ticket(int, int);
+void print_process_info(void);
 
 
 // ulib.c

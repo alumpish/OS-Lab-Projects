@@ -34,6 +34,17 @@ struct context {
 
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
+#define MAX_RANDOM_TICKETS 10
+#define AGING_THRESHOLD 8000
+
+enum schedqueue { UNSET, ROUND_ROBIN, LOTTERY, FCFS };
+struct schedinfo {
+  enum schedqueue queue; // Process queue
+  int last_run;          // Last time process was run
+  int arrival_time;      // Time process arrived in queue
+  int tickets_count;     // Number of tickets for lottery scheduler
+};
+
 // Per-process state
 struct proc {
   uint sz;                     // Size of process memory (bytes)
@@ -51,6 +62,7 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
   int children_count;          // Count of childern
+  struct schedinfo sched_info; // Scheduling information
 };
 
 // Process memory is laid out contiguously, low addresses first:

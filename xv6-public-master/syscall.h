@@ -24,3 +24,6 @@
 #define SYS_get_children_count 23
 #define SYS_kill_first_child 24
 #define SYS_find_fibonacci_number 25
+#define SYS_change_scheduling_queue 26
+#define SYS_set_lottery_ticket 27
+#define SYS_print_process_info 28
