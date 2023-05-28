@@ -30,6 +30,9 @@ int find_fibonacci_number(void);
 int change_scheduling_queue(int, int);
 int set_lottery_ticket(int, int);
 void print_process_info(void);
+void sem_init(int, int, const char*);
+void sem_acquire(int);
+void sem_release(int);
 
 
 // ulib.c
