@@ -27,18 +27,18 @@ void reader(int id)
     int i = 5;
     while (i--)
     {
-        ATOMIC(printf(1, "Reader %d want to access readcount\n", id))
+        ATOMIC(printf(1, "Reader %d wants to access readcount\n", id))
         sem_acquire(MUTEX);
         modvar(1);
         ATOMIC(printf(1, "Reader %d increased readcount to %d\n", id, getvar()))
         if (getvar() == 1)
         {
-            ATOMIC(printf(1, "Reader %d want to get WRT\n", id))
+            ATOMIC(printf(1, "Reader %d wants to get WRT\n", id))
             sem_acquire(WRT);
         }
         sem_release(MUTEX);
 
-        ATOMIC(printf(1, "Reader %d Read\n", id))
+        ATOMIC(printf(1, "Reader %d read\n", id))
 
         sem_acquire(MUTEX);
         modvar(-1);
@@ -46,7 +46,7 @@ void reader(int id)
 
         if (getvar() == 0)
         {
-            ATOMIC(printf(1, "Reader %d Released WRT\n", id))
+            ATOMIC(printf(1, "Reader %d released WRT\n", id))
             sem_release(WRT);
         }
         sem_release(MUTEX);
@@ -60,9 +60,9 @@ void writer(int id)
     int i = 5;
     while (i--)
     {
-        ATOMIC(printf(1, "Writer %d want to get WRT\n", id))
+        ATOMIC(printf(1, "Writer %d wants to get WRT\n", id))
         sem_acquire(WRT);
-        ATOMIC(printf(1, "Writer %d Wrote\n", id))
+        ATOMIC(printf(1, "Writer %d wrote\n", id))
         sem_release(WRT);
 
         sleep(10);
@@ -80,7 +80,7 @@ void start()
         }
     }
 
-    sleep(100);
+    sleep(30);
 
     for (int i = 0; i < NWRITERS; i++)
     {
@@ -97,8 +97,6 @@ void start()
 
 int main(void)
 {
-    // modvar(1);
-
     init_sems();
     start();
     exit();
