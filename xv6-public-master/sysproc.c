@@ -7,67 +7,64 @@
 #include "mmu.h"
 #include "proc.h"
 
-int
-sys_fork(void)
+int my_variable;
+
+int sys_fork(void)
 {
   return fork();
 }
 
-int
-sys_exit(void)
+int sys_exit(void)
 {
   exit();
-  return 0;  // not reached
+  return 0; // not reached
 }
 
-int
-sys_wait(void)
+int sys_wait(void)
 {
   return wait();
 }
 
-int
-sys_kill(void)
+int sys_kill(void)
 {
   int pid;
 
-  if(argint(0, &pid) < 0)
+  if (argint(0, &pid) < 0)
     return -1;
   return kill(pid);
 }
 
-int
-sys_getpid(void)
+int sys_getpid(void)
 {
   return myproc()->pid;
 }
 
-int
-sys_sbrk(void)
+int sys_sbrk(void)
 {
   int addr;
   int n;
 
-  if(argint(0, &n) < 0)
+  if (argint(0, &n) < 0)
     return -1;
   addr = myproc()->sz;
-  if(growproc(n) < 0)
+  if (growproc(n) < 0)
     return -1;
   return addr;
 }
 
-int
-sys_sleep(void)
+int sys_sleep(void)
 {
   int n;
   uint ticks0;
 
-  if(argint(0, &n) < 0)
+  if (argint(0, &n) < 0)
     return -1;
   acquire(&tickslock);
   ticks0 = ticks;
-  while(ticks - ticks0 < n){
-    if(myproc()->killed){
+  while (ticks - ticks0 < n)
+  {
+    if (myproc()->killed)
+    {
       release(&tickslock);
       return -1;
     }
@@ -79,8 +76,7 @@ sys_sleep(void)
 
 // return how many clock tick interrupts have occurred
 // since start.
-int
-sys_uptime(void)
+int sys_uptime(void)
 {
   uint xticks;
 
@@ -90,15 +86,15 @@ sys_uptime(void)
   return xticks;
 }
 
-
 extern int syscalls_count[25]; // assuming there are 25 system calls in xv6
 
-int
-sys_find_most_callee(void)
+int sys_find_most_callee(void)
 {
   int i, max_calls = 0, most_called_syscall = 0;
-  for (i = 0; i < 25; i++) {
-    if (syscalls_count[i] > max_calls) {
+  for (i = 0; i < 25; i++)
+  {
+    if (syscalls_count[i] > max_calls)
+    {
       max_calls = syscalls_count[i];
       most_called_syscall = i;
     }
@@ -106,35 +102,32 @@ sys_find_most_callee(void)
   return most_called_syscall;
 }
 
-int
-sys_get_children_count(void)
+int sys_get_children_count(void)
 {
   return myproc()->children_count;
 }
 
-int
-sys_kill_first_child(void)
+int sys_kill_first_child(void)
 {
   return kfc();
 }
 
-int
-sys_change_scheduling_queue(void)
+int sys_change_scheduling_queue(void)
 {
   int queue_number, pid;
-  if(argint(0, &pid) < 0 || argint(1, &queue_number) < 0)
+  if (argint(0, &pid) < 0 || argint(1, &queue_number) < 0)
     return -1;
 
-  if(queue_number < ROUND_ROBIN || queue_number > FCFS)
+  if (queue_number < ROUND_ROBIN || queue_number > FCFS)
     return -1;
 
   return change_queue(pid, queue_number);
 }
 
-int
-sys_set_lottery_ticket(void) {
+int sys_set_lottery_ticket(void)
+{
   int pid, tickets;
-  if(argint(0, &pid) < 0 || argint(1, &tickets) < 0)
+  if (argint(0, &pid) < 0 || argint(1, &tickets) < 0)
     return -1;
 
   if (tickets < 0)
@@ -143,52 +136,71 @@ sys_set_lottery_ticket(void) {
   return set_lottery_ticket(pid, tickets);
 }
 
-int
-sys_print_process_info(void)
+int sys_print_process_info(void)
 {
   print_process_info();
   return 0;
 }
 
-int
-sys_sem_init(void)
+int sys_sem_init(void)
 {
   int sem_id, value;
-  char* name;
-  if(argint(0, &sem_id) < 0 || argint(1, &value) < 0 || argstr(2, &name) < 0)
+  char *name;
+  if (argint(0, &sem_id) < 0 || argint(1, &value) < 0 || argstr(2, &name) < 0)
     return -1;
 
-  if(sem_id < 0 || sem_id >= NSEM)
+  if (sem_id < 0 || sem_id >= NSEM)
     return -1;
 
   sem_init(sem_id, value, name);
   return 0;
 }
 
-int
-sys_sem_acquire(void)
+int sys_sem_acquire(void)
 {
   int sem_id;
-  if(argint(0, &sem_id) < 0)
+  if (argint(0, &sem_id) < 0)
     return -1;
 
-  if(sem_id < 0 || sem_id >= NSEM)
+  if (sem_id < 0 || sem_id >= NSEM)
     return -1;
 
   sem_acquire(sem_id);
   return 0;
 }
 
-int
-sys_sem_release(void)
+int sys_sem_release(void)
 {
   int sem_id;
-  if(argint(0, &sem_id) < 0)
+  if (argint(0, &sem_id) < 0)
     return -1;
 
-  if(sem_id < 0 || sem_id >= NSEM)
+  if (sem_id < 0 || sem_id >= NSEM)
     return -1;
 
   sem_release(sem_id);
+  return 0;
+}
+
+int sys_setvar(void)
+{
+  int value;
+  if (argint(0, &value) < 0)
+    return -1;
+  my_variable = value;
+  return 0;
+}
+
+int sys_getvar(void)
+{
+  return my_variable;
+}
+
+int sys_modvar(void)
+{
+  int value;
+  if (argint(0, &value) < 0)
+    return -1;
+  my_variable += value;
   return 0;
 }

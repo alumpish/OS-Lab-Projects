@@ -6,32 +6,33 @@
 
 struct semaphore sems[NSEM];
 
-void
-semaphore_init(struct semaphore* sem, int value, char* name)
+void semaphore_init(struct semaphore *sem, int value, char *name)
 {
   sem->value = value;
+  sem->wfirst = 0;
+  sem->wlast = 0;
   initlock(&sem->lk, "semaphore");
   memset(sem->waiting, 0, sizeof(sem->waiting));
   memset(sem->holding, 0, sizeof(sem->holding));
-  sem->wfirst = 0;
-  sem->wlast = 0;
   sem->name = name;
 }
 
-void
-semaphore_acquire(struct semaphore* sem)
+void semaphore_acquire(struct semaphore *sem)
 {
   acquire(&sem->lk);
   --sem->value;
-  // cprintf("%s %d\n", sem->name, sem->value);
-  if(sem->value < 0){
+  // cprintf("aqquire %s %d\n", sem->name, sem->value);
+  if (sem->value < 0)
+  {
     sem->waiting[sem->wlast] = myproc();
     sem->wlast = (sem->wlast + 1) % NELEM(sem->waiting);
     sleep(sem, &sem->lk);
   }
-  struct proc* p = myproc();
-  for(int i = 0; i < NELEM(sem->holding); ++i){
-    if(sem->holding[i] == 0){
+  struct proc *p = myproc();
+  for (int i = 0; i < NELEM(sem->holding); ++i)
+  {
+    if (sem->holding[i] == 0)
+    {
       sem->holding[i] = p;
       break;
     }
@@ -39,19 +40,22 @@ semaphore_acquire(struct semaphore* sem)
   release(&sem->lk);
 }
 
-void
-semaphore_release(struct semaphore* sem)
+void semaphore_release(struct semaphore *sem)
 {
   acquire(&sem->lk);
+  // cprintf("release %s %d\n", sem->name, sem->value);
   ++sem->value;
-  if(sem->value <= 0){
+  if (sem->value <= 0)
+  {
     wakeupproc(sem->waiting[sem->wfirst]);
     sem->waiting[sem->wfirst] = 0;
     sem->wfirst = (sem->wfirst + 1) % NELEM(sem->waiting);
   }
-  struct proc* p = myproc();
-  for(int i = 0; i < NELEM(sem->holding); ++i){
-    if(sem->holding[i] == p){
+  struct proc *p = myproc();
+  for (int i = 0; i < NELEM(sem->holding); ++i)
+  {
+    if (sem->holding[i] == p)
+    {
       sem->holding[i] = 0;
       break;
     }
@@ -59,32 +63,30 @@ semaphore_release(struct semaphore* sem)
   release(&sem->lk);
 }
 
-int
-semaphore_holding(struct semaphore* sem)
+int semaphore_holding(struct semaphore *sem)
 {
-  struct proc* p = myproc();
-  for(int i = 0; i < NELEM(sem->waiting); ++i){
-    if(sem->holding[i] == p){
+  struct proc *p = myproc();
+  for (int i = 0; i < NELEM(sem->waiting); ++i)
+  {
+    if (sem->holding[i] == p)
+    {
       return 1;
     }
   }
   return 0;
 }
 
-void
-sem_init(int id, int value, const char* name)
+void sem_init(int id, int value, const char *name)
 {
   semaphore_init(&sems[id], value, name);
 }
 
-void
-sem_acquire(int id)
+void sem_acquire(int id)
 {
   semaphore_acquire(&sems[id]);
 }
 
-void
-sem_release(int id)
+void sem_release(int id)
 {
   semaphore_release(&sems[id]);
 }

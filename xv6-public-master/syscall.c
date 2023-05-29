@@ -113,6 +113,9 @@ extern int sys_print_process_info(void);
 extern int sys_sem_init(void);
 extern int sys_sem_acquire(void);
 extern int sys_sem_release(void);
+extern int sys_setvar(void);
+extern int sys_getvar(void);
+extern int sys_modvar(void);
 
 
 
@@ -148,6 +151,9 @@ static int (*syscalls[])(void) = {
 [SYS_sem_init]                  sys_sem_init,
 [SYS_sem_acquire]               sys_sem_acquire,
 [SYS_sem_release]               sys_sem_release,
+[SYS_setvar]    sys_setvar,
+[SYS_getvar]    sys_getvar,
+[SYS_modvar]    sys_modvar,
 };
 
 int syscalls_count[25];

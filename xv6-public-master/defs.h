@@ -136,6 +136,9 @@ int             kfc(void);
 int             change_queue(int, int);
 int             set_lottery_ticket(int, int);
 void            print_process_info(void);
+// int             sys_setvar(void);
+// int             sys_getvar(void);
+// int             sys_modvar(void);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

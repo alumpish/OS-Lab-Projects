@@ -33,6 +33,9 @@ void print_process_info(void);
 void sem_init(int, int, const char*);
 void sem_acquire(int);
 void sem_release(int);
+int setvar(int);
+int getvar(void);
+int modvar(int);
 
 
 // ulib.c
