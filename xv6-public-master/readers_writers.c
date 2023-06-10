@@ -80,8 +80,6 @@ void start()
         }
     }
 
-    sleep(30);
-
     for (int i = 0; i < NWRITERS; i++)
     {
         if (fork() == 0)
