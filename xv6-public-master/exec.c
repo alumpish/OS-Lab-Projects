@@ -18,7 +18,7 @@ exec(char *path, char **argv)
   struct proghdr ph;
   pde_t *pgdir, *oldpgdir;
   struct proc *curproc = myproc();
-  uint stack_top;
+  uint st;
 
   begin_op();
 
@@ -63,8 +63,8 @@ exec(char *path, char **argv)
 
   // Allocate two pages at the next page boundary.
   // Make the first inaccessible.  Use the second as the user stack.
-  stack_top = KERNBASE - 2*PGSIZE;
-  if((sp = allocuvm(pgdir, stack_top, KERNBASE)) == 0)
+  st = KERNBASE - 2*PGSIZE;
+  if((sp = allocuvm(pgdir, st, KERNBASE)) == 0)
     goto bad;
 
   // Push argument strings, prepare rest of stack in ustack.
@@ -96,7 +96,7 @@ exec(char *path, char **argv)
   oldpgdir = curproc->pgdir;
   curproc->pgdir = pgdir;
   curproc->sz = sz;
-  curproc->stack_top = stack_top;
+  curproc->st = st;
   curproc->tf->eip = elf.entry;  // main
   curproc->tf->esp = sp;
   switchuvm(curproc);

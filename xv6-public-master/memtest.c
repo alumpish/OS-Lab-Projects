@@ -12,12 +12,13 @@ void display_help()
     printf(1, "  both\n");
 }
 
-void recursive(int count)
+void stack(int count)
 {
-    if (count % 100000 == 0)
+    if (count % 1000000 == 0)
         printf(1, "stack: %d\n", count);
-    recursive(count + 1);
+    stack(count + 1);
     printf(1, "End");
+    exit();
 }
 
 void heap()
@@ -30,7 +31,7 @@ void heap()
 
         if (ptr == (int *)-1)
         {
-            printf(2, "Memory allocation failed. Exiting...\n");
+            printf(1, "Memory allocation failed. Exiting...\n");
             exit();
         }
 
@@ -48,7 +49,7 @@ int main(int argc, char *argv[])
     }
     if (!strcmp(argv[1], "stack"))
     {
-        recursive(1);
+        stack(1);
     }
     else if (!strcmp(argv[1], "heap"))
     {
@@ -57,9 +58,18 @@ int main(int argc, char *argv[])
     else if (!strcmp(argv[1], "both"))
     {
         if (fork() == 0)
-            recursive(1);
-        else
+        {
+            stack(1);
+            exit();
+        }
+        if (fork() == 0)
+        {
             heap();
+            exit();
+        }
+
+        wait();
+        wait();
     }
     else
         display_help();

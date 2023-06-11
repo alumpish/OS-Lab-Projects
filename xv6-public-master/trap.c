@@ -13,9 +13,9 @@ struct gatedesc idt[256];
 extern uint vectors[]; // in vectors.S: array of 256 entry pointers
 struct spinlock tickslock;
 uint ticks;
-uint last;
-uint bot;
+uint unmapped_addr;
 uint stackTop;
+uint new_stackTop;
 
 void tvinit(void)
 {
@@ -84,24 +84,23 @@ void trap(struct trapframe *tf)
     lapiceoi();
     break;
   case T_PGFLT:
-    last = rcr2();
-    stackTop = myproc()->stack_top;
-
-    if (last < stackTop && last > (stackTop - PGSIZE))
+    unmapped_addr = rcr2();
+    stackTop = myproc()->st;
+    new_stackTop = stackTop - PGSIZE;
+    if (unmapped_addr < stackTop && unmapped_addr > new_stackTop)
     {
-      bot = myproc()->stack_top - PGSIZE;
-      if (allocuvm(myproc()->pgdir, bot, myproc()->stack_top) == 0)
+      if (allocuvm(myproc()->pgdir, new_stackTop, stackTop) == 0)
       {
-        cprintf("Page fault detected... pid %d %s: trap %d err %d on cpu %d "
-                "eip 0x%x add 0x%x--kill proc,\n top_stack 0x%x\n",
+        cprintf("Page fault detected...\n"
+                " pid %d %s: trap %d err %d on cpu %d eip 0x%x add 0x%x--kill proc, top_stack 0x%x\n",
                 myproc()->pid, myproc()->name, tf->trapno,
-                tf->err, cpuid(), tf->eip, rcr2(), myproc()->stack_top);
+                tf->err, cpuid(), tf->eip, unmapped_addr, stackTop);
         myproc()->killed = 1;
         break;
       }
       else
       {
-        myproc()->stack_top = bot;
+        myproc()->st = new_stackTop;
         break;
       }
     }

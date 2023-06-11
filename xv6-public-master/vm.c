@@ -317,7 +317,7 @@ void clearpteu(pde_t *pgdir, char *uva)
 // Given a parent process's page table, create a copy
 // of it for a child.
 pde_t *
-copyuvm(pde_t *pgdir, uint sz, uint stack_top)
+copyuvm(pde_t *pgdir, uint sz, uint st)
 {
   pde_t *d;
   pte_t *pte;
@@ -344,12 +344,12 @@ copyuvm(pde_t *pgdir, uint sz, uint stack_top)
     }
   }
 
-  if (stack_top == 0)
+  if (st == 0)
   {
     return d;
   }
 
-  for (i = stack_top; i < KERNBASE; i += PGSIZE)
+  for (i = st; i < KERNBASE; i += PGSIZE)
   {
     if ((pte = walkpgdir(pgdir, (void *)i, 0)) == 0)
     {
