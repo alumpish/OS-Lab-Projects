@@ -193,6 +193,7 @@ UPROGS=\
 	_sched\
 	_foo\
 	_readers_writers\
+	_memtest\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)

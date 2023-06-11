@@ -13,6 +13,9 @@ struct gatedesc idt[256];
 extern uint vectors[]; // in vectors.S: array of 256 entry pointers
 struct spinlock tickslock;
 uint ticks;
+uint last;
+uint bot;
+uint stackTop;
 
 void tvinit(void)
 {
@@ -80,6 +83,28 @@ void trap(struct trapframe *tf)
             cpuid(), tf->cs, tf->eip);
     lapiceoi();
     break;
+  case T_PGFLT:
+    last = rcr2();
+    stackTop = myproc()->stack_top;
+
+    if (last < stackTop && last > (stackTop - PGSIZE))
+    {
+      bot = myproc()->stack_top - PGSIZE;
+      if (allocuvm(myproc()->pgdir, bot, myproc()->stack_top) == 0)
+      {
+        cprintf("Page fault detected... pid %d %s: trap %d err %d on cpu %d "
+                "eip 0x%x add 0x%x--kill proc,\n top_stack 0x%x\n",
+                myproc()->pid, myproc()->name, tf->trapno,
+                tf->err, cpuid(), tf->eip, rcr2(), myproc()->stack_top);
+        myproc()->killed = 1;
+        break;
+      }
+      else
+      {
+        myproc()->stack_top = bot;
+        break;
+      }
+    }
 
   // PAGEBREAK: 13
   default:
